@@ -29,6 +29,7 @@ void addLevelToReport(int level, int reportIndex, ReportList* list);
 int calculateSafeReports(ReportList* list);
 int isReportSafe(ReportRow* row);
 void printReportRow(ReportRow* row);
+ReportRow** generateRowPermutations(ReportRow* row);
 
 int main(int argc, char** argv) {
     /* verify args */
@@ -148,6 +149,20 @@ int calculateSafeReports(ReportList* list) {
             accum += 1;
         } else {
             printf("%lu. Report UNSAFE\n", i);
+            ReportRow** permutations = generateRowPermutations(row);
+            if (permutations == NULL) {
+                printf("generateRowPermutations returned no data\n");
+            } else {
+                size_t j;
+                for (j = 0; j < row->count; j++) {
+                    ReportRow* selected = permutations[j];
+                    if (isReportSafe(selected) == 1) {
+                        printf("Row permutation is valid, adding to accum");
+                        accum += 1;
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -194,4 +209,36 @@ int isReportSafe(ReportRow* row) {
     }
 
     return isSafe;
+}
+
+ReportRow** generateRowPermutations(ReportRow* row) {
+    printf("Generating %lu permutations", row->count);
+
+    ReportRow** reports = malloc(row->count * sizeof(ReportRow*));
+    if (reports == NULL) {
+        return NULL;
+    }
+
+    size_t i;
+    for (i = 0; i < row->count; i++) {
+        ReportRow* newRow = (ReportRow*) calloc(1, sizeof(ReportRow));
+        if (newRow == NULL) {
+            printf("generateReportPermutations could not alloc a ReportRow");
+            return NULL;
+        }
+
+        newRow->count = row->count - 1;
+        size_t newRowIndex = 0;
+        size_t j;
+        for (j = 0; j < row->count; j++) {
+            if (j == i) continue;
+
+            newRow->levels[newRowIndex] = row->levels[j];
+            newRowIndex++;
+        }
+
+        reports[i] = newRow;
+    }
+
+    return reports;
 }
