@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
         printf("Error opening input file\n");
         return -1;
     }
-    printf("%s", buffer);
+    /*printf("%s", buffer);*/
 
     /* compile and execute regex */
     long finalValue = extract(buffer);
@@ -76,7 +76,7 @@ long extract(char* buffer) {
     /* "mul\\((\\d+),(\\d+)\\)" */
     /* "mul((d+),(d+))" */
     /* "mul\\((d+),(d+)\\)" */
-    if (regcomp(&pattern, "mul\\(([0-9]+),([0-9]+)\\)", REG_EXTENDED)) {
+    if (regcomp(&pattern, "don't\\(\\)|do\\(\\)|mul\\(([0-9]+),([0-9]+)\\)", REG_EXTENDED)) {
         printf("Error compiling regex");
         return 0;
     }
@@ -85,33 +85,50 @@ long extract(char* buffer) {
     char* bufferStartPtr = buffer;
     char* bufferPtr = buffer;
     regmatch_t match[pattern.re_nsub + 1];
+    int allowInstructions = 1;
+    printf("BEGIN\n");
     while (regexec(&pattern, bufferPtr, pattern.re_nsub + 1, match, 0) == 0) {
         char* temp = calloc(50, sizeof(char));
-        char* num1 = calloc(10, sizeof(char));
-        char* num2 = calloc(10, sizeof(char));
-
         char* diff = bufferStartPtr + (bufferPtr - bufferStartPtr) + match->rm_so;
         strncpy(temp, diff, match->rm_eo - match->rm_so);
 
-        regmatch_t numMatch = match[1];
-        char* num1Diff = bufferStartPtr + (bufferPtr - bufferStartPtr) + numMatch.rm_so;
-        strncpy(num1, num1Diff, numMatch.rm_eo - numMatch.rm_so);
+        int skipCheck = 0;
+        if (strncmp(temp, "don't()", 7) == 0) {
+            printf("STOP: %s\n", temp);
+            allowInstructions = 0;
+            skipCheck = 1;
+        } else if (strncmp(temp, "do()", 4) == 0) {
+            printf("BEGIN: %s\n", temp);
+            allowInstructions = 1;
+            skipCheck = 1;
+        }
 
-        numMatch = match[2];
-        char* num2Diff = bufferStartPtr + (bufferPtr - bufferStartPtr) + numMatch.rm_so;
-        strncpy(num2, num2Diff, numMatch.rm_eo - numMatch.rm_so);
+        if (allowInstructions && !skipCheck) {
+          char *num1 = calloc(10, sizeof(char));
+          char *num2 = calloc(10, sizeof(char));
+          regmatch_t numMatch = match[1];
+          char *num1Diff =
+              bufferStartPtr + (bufferPtr - bufferStartPtr) + numMatch.rm_so;
+          strncpy(num1, num1Diff, numMatch.rm_eo - numMatch.rm_so);
 
-        int num1Conv = atoi(num1);
-        int num2Conv = atoi(num2);
+          numMatch = match[2];
+          char *num2Diff =
+              bufferStartPtr + (bufferPtr - bufferStartPtr) + numMatch.rm_so;
+          strncpy(num2, num2Diff, numMatch.rm_eo - numMatch.rm_so);
 
-        printf("full match: %s\n", temp);
-        printf("\tnum1: %s, num2: %s\n", num1, num2);
-        ret += (num1Conv * num2Conv);
+          int num1Conv = atoi(num1);
+          int num2Conv = atoi(num2);
+
+          printf("full match: %s\n", temp);
+          printf("\tnum1: %s, num2: %s\n", num1, num2);
+          ret += (num1Conv * num2Conv);
+          free(num1);
+          free(num2);
+        }
         bufferPtr += match->rm_eo;
 
         free(temp);
-        free(num1);
-        free(num2);
+
     }
 
     regfree(&pattern);
