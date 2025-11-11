@@ -6,11 +6,11 @@ CFLAGS = -Wall -ansi -g
 BIN_DIR = bin
 
 # Target executable
-TARGET = $(BIN_DIR)/day_03
+TARGET = $(BIN_DIR)/day_04
 
 # Source files
-SOURCES = day_03.c
-OBJECTS = $(SOURCES:.c=.o) $(SOURCES:.c=.dSYM)
+SOURCES = day_04.c
+OBJECTS = $(SOURCES:.c=.o)
 
 # Default target
 all: $(TARGET)
