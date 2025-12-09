@@ -59,8 +59,17 @@ struct Day01: AdventDay {
             
             // edge case where dial is at 0 and we go negative
             // problem is here somewhere
-            while dial < 0 {
-                dial += 100
+            if dial < 0 {
+                var countZeros = true
+                if preDial == 0 {
+                    zeroVisits += instruction.distance / 100
+                    countZeros = false
+                }
+                
+                while dial < 0 {
+                    dial += 100
+                    if countZeros { zeroVisits += 1 }
+                }
             }
             
             // edge case where dial is at 99 and we go over
