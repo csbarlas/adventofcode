@@ -5,6 +5,8 @@
 //  Created by Chris Barlas on 12/20/25.
 //
 
+// TODO: Utilize Swift Concurrency to speed up compute time
+
 struct Day02: AdventDay {
     private struct IdRange {
         var lower, upper: String
@@ -24,20 +26,20 @@ struct Day02: AdventDay {
     }
     
     func part1() async throws -> Int {
-        invalidIdAggregator(isInvalid: isInvalidPartOne(_:))
+        invalidIdAggregator(isInvalid: isInvalid(_:partTwo:), partTwo: false)
     }
     
     func part2() async throws -> Int {
-        invalidIdAggregator(isInvalid: isInvalidPartTwo(_:))
+        invalidIdAggregator(isInvalid: isInvalid(_:partTwo:), partTwo: true)
     }
     
-    private func invalidIdAggregator(isInvalid: (Int) -> Bool) -> Int {
+    private func invalidIdAggregator(isInvalid: (Int, Bool) -> Bool, partTwo: Bool = false) -> Int {
         var sum = 0
         for range in items {
             if let lower = Int(range.lower.trimmingCharacters(in: .whitespacesAndNewlines)),
                let upper = Int(range.upper.trimmingCharacters(in: .whitespacesAndNewlines)) {
                 for number in lower...upper {
-                    if isInvalid(number) {
+                    if isInvalid(number, partTwo) {
                         sum += number
                     }
                 }
@@ -46,29 +48,14 @@ struct Day02: AdventDay {
         return sum
     }
     
-    private func isInvalidPartOne(_ id: Int) -> Bool {
+    private func isInvalid(_ id: Int, partTwo: Bool = false) -> Bool {
         let id = String(id)
         for i in id.indices.prefix(id.count / 2) {
             let pattern = id[...i]
             let matches = id.ranges(of: pattern)
             // first part tests for 2 matches (constraint #1)
             // second part tests that the 2 matches comprise the whole string
-            if matches.count == 2 && (matches.count * pattern.count == id.count) {
-                return true
-            }
-        }
-        
-        return false
-    }
-    
-    private func isInvalidPartTwo(_ id: Int) -> Bool {
-        let id = String(id)
-        for i in id.indices.prefix(id.count / 2) {
-            let pattern = id[...i]
-            let matches = id.ranges(of: pattern)
-            // first part tests for at least 2 matches (constraint #1)
-            // second part tests that the matches comprise the whole string
-            if matches.count >= 2 && (matches.count * pattern.count == id.count) {
+            if (partTwo ? matches.count >= 2 : matches.count == 2) && (matches.count * pattern.count == id.count) {
                 return true
             }
         }
