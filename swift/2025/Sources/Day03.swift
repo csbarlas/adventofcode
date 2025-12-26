@@ -19,79 +19,39 @@ struct Day03: AdventDay {
     func part1() async throws -> Int {
         var sum = 0
         for bank in banks {
-            sum += calcMaxJoltage(bank: bank)
+            sum += calcMaxJoltage(bank: bank, maxLength: 2)
         }
         return sum
     }
     
     func part2() async throws -> Int {
-        return 0
+        var sum = 0
+        for bank in banks {
+            sum += calcMaxJoltage(bank: bank, maxLength: 12)
+        }
+        return sum
     }
     
-    private func calcMaxJoltage(bank: String) -> Int {
-        var tensDigitIdx = bank.startIndex
-        var onesDigitIdx = bank.index(after: bank.startIndex)
-        guard let num = bank.indexesToInt(tens: tensDigitIdx, ones: onesDigitIdx) else { return 0 }
-        var currentMax = num
-        var index = bank.index(after: onesDigitIdx)
-        while index < bank.endIndex {
-            var newTens = tensDigitIdx
-            var newOnes = onesDigitIdx
-            var tempMax = currentMax
-            var windowDidJump = false
-            // Options, be greedy:
-            // 1. [new digit][new digit + 1] is bigger than current
-            // 2. [current ones][new digit] is bigger than current
-            // 2. [current tens][new digit] is bigger than current
-            // 3. no change
+    private func calcMaxJoltage(bank: String, maxLength: Int) -> Int {
+        var joltages = bank
+        
+        while joltages.count > maxLength {
+            var victim = joltages.startIndex
             
-            let splitWindow = bank.indexesToInt(tens: tensDigitIdx, ones: index) ?? 0
-            if splitWindow > tempMax {
-                tempMax = splitWindow
-                newOnes = index
-            }
-            
-            let windowShift = bank.indexesToInt(tens: onesDigitIdx, ones: index) ?? 0
-            if windowShift > tempMax {
-                tempMax = windowShift
-                newTens = onesDigitIdx
-                newOnes = index
-            }
-            
-            if index != bank.index(before: bank.endIndex) {
-                let peekAheadOnes = bank.index(after: index)
-                let windowJump = bank.indexesToInt(tens: index, ones: peekAheadOnes) ?? 0
-                if windowJump > tempMax {
-                    tempMax = windowJump
-                    newTens = index
-                    newOnes = peekAheadOnes
-                    windowDidJump = true
+            for index in joltages.indices {
+                guard let joltage = joltages[index].wholeNumberValue,
+                      let min = joltages[victim].wholeNumberValue else { return -1 }
+                
+                if joltage < min {
+                    victim = index
+                } else if joltage > min {
+                    break
                 }
             }
             
-            // Commit any larger numbers that were found
-            currentMax = tempMax
-            tensDigitIdx = newTens
-            onesDigitIdx = newOnes
-            
-            // Move forward pointer
-            index = bank.index(after: index)
-            if windowDidJump { index = bank.index(after: index) }
+            joltages.remove(at: victim)
         }
         
-        return currentMax
-    }
-}
-
-private extension String {
-    func indexToInt(_ index: Self.Index) -> Int? {
-        Int(String(self[index]))
-    }
-    
-    func indexesToInt(tens: Self.Index, ones: Self.Index) -> Int? {
-        guard let tens = self.indexToInt(tens),
-              let ones = self.indexToInt(ones) else { return nil }
-        
-        return (tens * 10) + ones
+        return Int(joltages) ?? -1
     }
 }
