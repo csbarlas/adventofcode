@@ -23,7 +23,7 @@ struct GridCursor {
     }
 
     private let map: [[MapEntity]]
-    private var x, y: Int
+    private(set) var x, y: Int
 
     init(map: [[MapEntity]], x: Int, y: Int) {
         self.map = map
@@ -33,6 +33,15 @@ struct GridCursor {
 
     func read() -> MapEntity {
         return map[y][x]
+    }
+    
+    func iterate(_ perform: (GridCursor) -> Void) {
+        for lineIndex in map.indices {
+            let line = map[lineIndex]
+            for itemIndex in line.indices {
+                perform(GridCursor(map: map, x: itemIndex, y: lineIndex))
+            }
+        }
     }
 
     func read(directions: [CompassDirection], perform: (MapEntity) -> Void) {
@@ -119,8 +128,8 @@ struct GridCursor {
 struct Day04: AdventDay {
 
     var data: String
-
-    private var forkliftMap: [[MapEntity]] {
+    
+    private func createMap() -> [[MapEntity]] {
         var map = [[MapEntity]]()
         for line in data.components(separatedBy: "\n") {
             if line.isEmpty { continue }
@@ -138,23 +147,42 @@ struct Day04: AdventDay {
     }
 
     func part1() async throws -> Int {
+        let forkliftMap = createMap()
         var accessibleRolls = 0
 
-        for lineIndex in forkliftMap.indices {
-            let line = forkliftMap[lineIndex]
-            for itemIndex in line.indices {
-                let cursor = GridCursor(map: forkliftMap, x: itemIndex, y: lineIndex)
-                
-                if cursor.read() == .paperRoll && adjacentPaperRolls(cursor: cursor) < 4 {
-                    accessibleRolls += 1
-                }
+        let cursor = GridCursor(map: forkliftMap, x: 0, y: 0)
+        cursor.iterate { cursor in
+            if cursor.read() == .paperRoll && adjacentPaperRolls(cursor: cursor) < 4 {
+                accessibleRolls += 1
             }
         }
+
         return accessibleRolls
     }
 
     func part2() async throws -> Int {
-        return 0
+        var forkliftMap = createMap()
+        var removeSum = 0
+        var rollsToRemove = 0
+
+        repeat {
+            rollsToRemove = 0
+            var mapCopy = forkliftMap
+
+            let cursor = GridCursor(map: forkliftMap, x: 0, y: 0)
+            cursor.iterate { cursor in
+                if cursor.read() == .paperRoll && adjacentPaperRolls(cursor: cursor) < 4 {
+                    rollsToRemove += 1
+                    mapCopy[cursor.y][cursor.x] = .free
+                }
+            }
+
+            removeSum += rollsToRemove
+            forkliftMap = mapCopy
+        }
+        while rollsToRemove > 0
+        
+        return removeSum
     }
 
     private func adjacentPaperRolls(cursor: GridCursor) -> Int {
